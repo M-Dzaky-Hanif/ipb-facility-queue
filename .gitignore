@@ -1,14 +1,18 @@
-# Lingkungan Virtual Python
-venv/
+# Lingkungan Virtual Python & Cache Backend
+backend/venv/
 __pycache__/
+*.pyc
+.pytest_cache/
 
-# Kredensial & Variabel Lingkungan
+# Modul & Build Frontend (React + Vite)
+frontend/node_modules/
+frontend/dist/
+
+# Kredensial & Variabel Lingkungan (Sangat Penting Agar Tidak Bocor!)
 .env
+backend/.env
+frontend/.env
 
-# Modul Node.js (Frontend)
-node_modules/
-dist/
-
-# File Sistem/OS
+# File Sampah Sistem / OS
 .DS_Store
 Thumbs.db

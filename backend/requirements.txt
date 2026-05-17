@@ -5,3 +5,5 @@ asyncpg
 pydantic
 pydantic-settings
 alembic
+bcrypt
+email-validator
