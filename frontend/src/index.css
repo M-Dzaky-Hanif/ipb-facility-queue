@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+/* 1. REGISTRASI VARIABEL CUSTOM KE DALAM THEME TAILWIND V4 (CARA YANG BENAR) */
+@theme {
+  --color-text-main: #6b6375;
+  --color-text-main-dark: #9ca3af;
+
+  --color-text-h: #08060d;
+  --color-text-h-dark: #f3f4f6;
+
+  --color-bg-main: #fff;
+  --color-bg-main-dark: #16171d;
+
+  --color-border-main: #e5e4e7;
+  --color-border-main-dark: #2e303a;
+
+  --color-code-bg: #f4f3ec;
+  --color-code-bg-dark: #1f2028;
+
+  --color-accent-main: #aa3bff;
+  --color-accent-main-dark: #c084fc;
+}
+
+/* 2. CSS BASE UNTUK STRUKTUR HALAMAN */
+@layer base {
+  :root {
+    --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+    --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+    --mono: ui-monospace, Consolas, monospace;
+
+    font: 18px/145% var(--sans);
+    letter-spacing: 0.18px;
+    color-scheme: light dark;
+    
+    /* Menggunakan variabel default */
+    color: var(--color-text-main);
+    background: var(--color-bg-main);
+    
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* DETEKSI DARK MODE SECARA MANUAL UNTUK CSS BIASA */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color: var(--color-text-main-dark);
+      background: var(--color-bg-main-dark);
+    }
+    
+    h1, h2 {
+      color: var(--color-text-h-dark) !important;
+    }
+
+    code, .counter {
+      color: var(--color-text-h-dark) !important;
+      background: var(--color-code-bg-dark) !important;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    :root {
+      font-size: 16px;
+    }
+  }
+
+  body {
+    margin: 0;
+  }
+
+  h1, h2 {
+    font-family: var(--heading);
+    font-weight: 500;
+    color: var(--color-text-h);
+  }
+
+  h1 {
+    font-size: 56px;
+    letter-spacing: -1.68px;
+    margin: 32px 0;
+  }
+
+  @media (max-width: 1024px) {
+    h1 {
+      font-size: 36px;
+      margin: 20px 0;
+    }
+  }
+
+  h2 {
+    font-size: 24px;
+    line-height: 118%;
+    letter-spacing: -0.24px;
+    margin: 0 0 8px;
+  }
+
+  @media (max-width: 1024px) {
+    h2 {
+      font-size: 20px;
+    }
+  }
+
+  p {
+    margin: 0;
+  }
+
+  code, .counter {
+    font-family: var(--mono);
+    display: inline-flex;
+    border-radius: 4px;
+    color: var(--color-text-h);
+  }
+
+  code {
+    font-size: 15px;
+    line-height: 135%;
+    padding: 4px 8px;
+    background: var(--color-code-bg);
+  }
+}
+
+/* 3. CSS UTAMA UNTUK LAYOUT UTAMA */
+#root {
+  width: 1126px;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  border-inline: 1px solid var(--color-border-main);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+@media (prefers-color-scheme: dark) {
+  #root {
+    border-inline: 1px solid var(--color-border-main-dark);
+  }
+  #social .button-icon {
+    filter: invert(1) brightness(2);
+  }
+}

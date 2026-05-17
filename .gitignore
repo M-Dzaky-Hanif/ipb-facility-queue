@@ -1,0 +1,14 @@
+# Lingkungan Virtual Python
+venv/
+__pycache__/
+
+# Kredensial & Variabel Lingkungan
+.env
+
+# Modul Node.js (Frontend)
+node_modules/
+dist/
+
+# File Sistem/OS
+.DS_Store
+Thumbs.db
