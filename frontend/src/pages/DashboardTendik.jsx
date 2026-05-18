@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axiosInstance';
 import Navbar from '../components/Navbar';
+import { useNavigate } from 'react-router-dom';
 
 export default function DashboardTendik() {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [bookings, setBookings] = useState([]);
     const [error, setError] = useState('');
 
@@ -12,16 +14,26 @@ export default function DashboardTendik() {
         try {
             const res = await API.get('/bookings/');
             // Saring pengajuan yang berstatus PENDING untuk di-review
-            setBookings(res.data.filter(b => b.status === 'PENDING'));
+            setBookings(res.data.filter(b => b.status?.toUpperCase() === 'PENDING'));
         } catch (err) {
             console.error("Gagal memuat list booking:", err);
             setError("Gagal mengambil data transaksi pendaftaran.");
         }
     }, []);
 
+    // HOOK 1: Ambil data booking hanya jika user sedang aktif login
     useEffect(() => {
-        fetchAllBookings();
-    }, [fetchAllBookings]);
+        if (user) {
+            fetchAllBookings();
+        }
+    }, [fetchAllBookings, user]);
+
+    // HOOK 2: DETEKSI LOGOUT (Ini fungsi sakti yang sebelumnya tertinggal)
+    useEffect(() => {
+        if (!user) {
+            navigate('/login', { replace: true });
+        }
+    }, [user, navigate]);
 
     const handleAction = async (id_booking, statusAction) => {
         try {
@@ -34,6 +46,11 @@ export default function DashboardTendik() {
             alert("Gagal memperbarui status transaksi.");
         }
     };
+
+    // EARLY RETURN: Di posisi yang benar (setelah semua Hooks dideklarasikan)
+    if (!user) {
+        return null; 
+    }
 
     return (
         <div className="min-h-screen bg-slate-50">

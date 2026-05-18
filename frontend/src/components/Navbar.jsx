@@ -1,7 +1,15 @@
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function Navbar() {
     const { user, logoutAction } = useAuth();
+    const navigate = useNavigate();
+
+    // 3. Buat fungsi handler logout
+    const handleLogout = () => {
+        logoutAction();
+        navigate('/login'); // Redirect paksa ke halaman login
+    };
 
     return (
         <nav className="bg-white border-b border-slate-100 px-6 py-4 flex justify-between items-center shadow-xs">

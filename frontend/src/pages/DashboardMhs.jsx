@@ -2,16 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axiosInstance';
 import Navbar from '../components/Navbar';
+import { useNavigate } from 'react-router-dom';
 
 export default function DashboardMhs() {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [fasilitas, setFasilitas] = useState([]);
     const [myBookings, setMyBookings] = useState([]);
     const [selectedFasilitas, setSelectedFasilitas] = useState('');
     const [tanggal, setTanggal] = useState('');
     const [jam, setJam] = useState('09:00:00');
     const [keperluan, setKeperluan] = useState('');
-    
     const [message, setMessage] = useState({ type: '', text: '' });
 
     // Membungkus fungsi dengan useCallback agar aman dimasukkan ke dependency array useEffect
@@ -30,8 +31,21 @@ export default function DashboardMhs() {
     }, [user?.id]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (user) {
+            fetchData();
+        }
+    }, [fetchData, user]);
+
+    useEffect(() => {
+        if (!user) {
+            navigate('/login', { replace: true });
+        }
+    }, [user, navigate]);
+
+    // EARLY RETURN
+    if (!user) {
+        return null;
+    }
 
     const handleAjukan = async (e) => {
         e.preventDefault();
