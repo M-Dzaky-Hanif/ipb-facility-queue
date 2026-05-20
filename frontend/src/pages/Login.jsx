@@ -21,7 +21,7 @@ export default function Login() {
         if (result.success) {
             // Arahkan ke dashboard spesifik sesuai peran
             if (result.user.role.toLowerCase() === 'mahasiswa') {
-                navigate('/dashboard-mahasiswa');
+                navigate('/gallery');
             } else {
                 navigate('/dashboard-tendik');
             }

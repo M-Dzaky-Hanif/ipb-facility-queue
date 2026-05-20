@@ -2,25 +2,25 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
-
-// IMPORT HALAMAN DASHBOARD ASLI YANG SUDAH KITA BUAT
 import DashboardMhs from './pages/DashboardMhs';
 import DashboardTendik from './pages/DashboardTendik';
+import Gallery from './pages/Gallery';
+import BookingForm from './pages/BookingForm';
+import BookingAlatForm from './pages/BookingAlatForm';
 
 export default function App() {
     return (
         <AuthProvider>
             <Router>
                 <Routes>
+                    <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
-                    
-                    {/* SEKARANG MENGARAH KE KOMPONEN DASHBOARD ASLI */}
                     <Route path="/dashboard-mahasiswa" element={<DashboardMhs />} />
                     <Route path="/dashboard-tendik" element={<DashboardTendik />} />
-                    
-                    {/* Rute otomatis jika mengetik sembarang alamat */}
-                    <Route path="*" element={<Navigate to="/login" replace />} />
+                    <Route path="/gallery" element={<Gallery />} /> 
+                    <Route path="/booking-form" element={<BookingForm />} />
+                    <Route path="/booking-alat" element={<BookingAlatForm />} />
                 </Routes>
             </Router>
         </AuthProvider>

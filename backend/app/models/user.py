@@ -25,6 +25,19 @@ class User(Base):
     id_staff: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True) 
 
     # Relasi
-    bookings: Mapped[list["Booking"]] = relationship("Booking", back_populates="mahasiswa", foreign_keys="[Booking.mahasiswa_id]")
-    approved_bookings: Mapped[list["Booking"]] = relationship("Booking", back_populates="tendik", foreign_keys="[Booking.tendik_id]") 
-    notifikasi: Mapped[list["Notifikasi"]] = relationship("Notifikasi", back_populates="user")
+    bookings: Mapped[list["Booking"]] = relationship(
+        "Booking", 
+        primaryjoin="User.id == Booking.mahasiswa_id",
+        back_populates="mahasiswa"
+    )
+    
+    approved_bookings: Mapped[list["Booking"]] = relationship(
+        "Booking", 
+        primaryjoin="User.id == Booking.tendik_id",
+        back_populates="tendik"
+    )
+    
+    notifikasi: Mapped[list["Notifikasi"]] = relationship(
+        "Notifikasi", 
+        back_populates="user"
+    )

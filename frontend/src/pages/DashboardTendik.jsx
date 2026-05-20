@@ -1,19 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import Navbar from '../components/Navbar';
-import { useNavigate } from 'react-router-dom';
 
 export default function DashboardTendik() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [bookings, setBookings] = useState([]);
     const [error, setError] = useState('');
+    
+    // State Kontrol Navigasi Sub-Tab Internal Tendik
+    const [activeTab, setActiveTab] = useState('evaluasi'); // Opsi: 'evaluasi' atau 'profil'
 
     const fetchAllBookings = useCallback(async () => {
         try {
             const res = await API.get('/bookings/');
-            // Saring pengajuan yang berstatus PENDING untuk di-review
             setBookings(res.data.filter(b => b.status?.toUpperCase() === 'PENDING'));
         } catch (err) {
             console.error("Gagal memuat list booking:", err);
@@ -21,14 +23,12 @@ export default function DashboardTendik() {
         }
     }, []);
 
-    // HOOK 1: Ambil data booking hanya jika user sedang aktif login
     useEffect(() => {
         if (user) {
             fetchAllBookings();
         }
     }, [fetchAllBookings, user]);
 
-    // HOOK 2: DETEKSI LOGOUT (Ini fungsi sakti yang sebelumnya tertinggal)
     useEffect(() => {
         if (!user) {
             navigate('/login', { replace: true });
@@ -38,16 +38,15 @@ export default function DashboardTendik() {
     const handleAction = async (id_booking, statusAction) => {
         try {
             await API.put(`/bookings/${id_booking}/approval`, {
-                status: statusAction, // 'Approved' atau 'Rejected'
+                status: statusAction,
                 tendik_id: user.id
             });
-            fetchAllBookings(); // Muat ulang data secara real-time
+            fetchAllBookings();
         } catch (err) {
             alert("Gagal memperbarui status transaksi.");
         }
     };
 
-    // EARLY RETURN: Di posisi yang benar (setelah semua Hooks dideklarasikan)
     if (!user) {
         return null; 
     }
@@ -56,62 +55,128 @@ export default function DashboardTendik() {
         <div className="min-h-screen bg-slate-50">
             <Navbar />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="mb-6">
-                        <h2 className="text-xl font-bold text-slate-900">Konsol Evaluasi Peminjaman</h2>
-                        <p className="text-sm text-slate-500">Daftar permintaan persetujuan penggunaan ruang fasilitas & laboratorium IPB</p>
-                    </div>
+                
+                {/* SUB-NAVIGASI SEGMENTED TABS INTERNAL TENDIK */}
+                <div className="flex bg-slate-200/60 p-1 rounded-xl w-fit gap-1 mb-8 border border-slate-200">
+                    <button
+                        onClick={() => setActiveTab('evaluasi')}
+                        className={`px-5 py-2 text-xs font-bold rounded-lg transition duration-150 cursor-pointer ${
+                            activeTab === 'evaluasi' 
+                                ? 'bg-white text-indigo-600 shadow-xs' 
+                                : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                    >
+                        📋 Konsol Evaluasi
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('profil')}
+                        className={`px-5 py-2 text-xs font-bold rounded-lg transition duration-150 cursor-pointer ${
+                            activeTab === 'profil' 
+                                ? 'bg-white text-indigo-600 shadow-xs' 
+                                : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                    >
+                        👤 Profil Administrasi
+                    </button>
+                </div>
 
-                    {error && <div className="p-3 mb-4 bg-red-50 text-red-600 rounded-xl text-sm">{error}</div>}
+                {/* TAMPILAN KONTEN BERDASARKAN SELEKSI TAB */}
+                {activeTab === 'evaluasi' ? (
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div className="mb-6">
+                            <h2 className="text-xl font-bold text-slate-900">Konsol Evaluasi Peminjaman</h2>
+                            <p className="text-sm text-slate-500">Daftar permintaan persetujuan penggunaan ruang fasilitas & laboratorium IPB</p>
+                        </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-slate-600">
-                            <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
-                                <tr>
-                                    <th className="p-3 rounded-l-lg">ID Booking</th>
-                                    <th className="p-3">Fasilitas</th>
-                                    <th className="p-3">Waktu Pelaksanaan</th>
-                                    <th className="p-3">Tujuan Penggunaan</th>
-                                    <th className="p-3 rounded-r-lg text-center">Aksi Keputusan</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {bookings.length === 0 ? (
+                        {error && <div className="p-3 mb-4 bg-red-50 text-red-600 rounded-xl text-sm">{error}</div>}
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm text-slate-600">
+                                <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
                                     <tr>
-                                        <td colSpan="5" className="p-6 text-center text-slate-400 font-medium">
-                                            Bersih! Tidak ada antrian pengajuan peminjaman baru saat ini.
-                                        </td>
+                                        <th className="p-3 rounded-l-lg">ID Booking</th>
+                                        <th className="p-3">Fasilitas</th>
+                                        <th className="p-3">Waktu Pelaksanaan</th>
+                                        <th className="p-3">Tujuan Penggunaan</th>
+                                        <th className="p-3 rounded-r-lg text-center">Aksi Keputusan</th>
                                     </tr>
-                                ) : (
-                                    bookings.map((b) => (
-                                        <tr key={b.id_booking} className="hover:bg-slate-50/40 transition">
-                                            <td className="p-3 font-semibold text-indigo-600">#BK-00{b.id_booking}</td>
-                                            <td className="p-3 text-slate-800 font-medium">{b.fasilitas_id}</td>
-                                            <td className="p-3 text-xs text-slate-600 font-medium">
-                                                {b.tanggal} <span className="block text-slate-400">{b.jam}</span>
-                                            </td>
-                                            <td className="p-3 text-slate-500 max-w-sm">{b.keperluan}</td>
-                                            <td className="p-3 flex justify-center space-x-2">
-                                                <button 
-                                                    onClick={() => handleAction(b.id_booking, 'Approved')}
-                                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-xs rounded-lg transition duration-150 cursor-pointer shadow-xs shadow-green-100"
-                                                >
-                                                    Setujui
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleAction(b.id_booking, 'Rejected')}
-                                                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-lg transition duration-150 cursor-pointer"
-                                                >
-                                                    Tolak
-                                                </button>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {bookings.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="5" className="p-6 text-center text-slate-400 font-medium">
+                                                Bersih! Tidak ada antrian pengajuan peminjaman baru saat ini.
                                             </td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                    ) : (
+                                        bookings.map((b) => (
+                                            <tr key={b.id_booking} className="hover:bg-slate-50/40 transition">
+                                                <td className="p-3 font-semibold text-indigo-600">#BK-00{b.id_booking}</td>
+                                                <td className="p-3 text-slate-800 font-medium">{b.fasilitas_id}</td>
+                                                <td className="p-3 text-xs text-slate-600 font-medium">
+                                                    {b.tanggal} <span className="block text-slate-400">{b.jam}</span>
+                                                </td>
+                                                <td className="p-3 text-slate-500 max-w-sm">{b.keperluan}</td>
+                                                <td className="p-3 flex justify-center space-x-2">
+                                                    <button 
+                                                        onClick={() => handleAction(b.id_booking, 'Approved')}
+                                                        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-xs rounded-lg transition duration-150 cursor-pointer shadow-xs shadow-green-100"
+                                                    >
+                                                        Setujui
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleAction(b.id_booking, 'Rejected')}
+                                                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-lg transition duration-150 cursor-pointer"
+                                                    >
+                                                        Tolak
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    /* PROFILE PAGE YANG BERBEDA KHUSUS UNTUK ROLE TENDIK */
+                    <div className="max-w-2xl bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="h-32 bg-gradient-to-r from-slate-800 to-indigo-950 flex items-end p-6 relative">
+                            <div className="w-20 h-20 bg-indigo-50 border-4 border-white rounded-xl shadow-sm flex items-center justify-center text-2xl font-bold text-indigo-700 absolute -bottom-8 left-6 uppercase">
+                                {user.nama?.substring(0, 2)}
+                            </div>
+                        </div>
+                        <div className="pt-12 p-6">
+                            <div className="mb-6">
+                                <h2 className="text-2xl font-extrabold text-slate-900">{user.nama}</h2>
+                                <span className="inline-block mt-1 px-2.5 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold rounded-md tracking-wider uppercase">
+                                    Staff {user.role}
+                                </span>
+                            </div>
+
+                            <div className="border-t border-slate-100 pt-5 space-y-4">
+                                <div className="grid grid-cols-3 py-2 border-b border-slate-50">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Dinas</span>
+                                    <span className="text-sm font-semibold text-slate-800 col-span-2">{user.email}</span>
+                                </div>
+                                {user.nip && (
+                                    <div className="grid grid-cols-3 py-2 border-b border-slate-50">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nomor Induk Pegawai</span>
+                                        <span className="text-sm font-bold text-slate-800 col-span-2 font-mono">{user.nip}</span>
+                                    </div>
+                                )}
+                                <div className="grid grid-cols-3 py-2 border-b border-slate-50">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Otoritas Dokumen</span>
+                                    <span className="text-sm font-semibold text-emerald-600 col-span-2">Validator Utama Peminjaman Aset</span>
+                                </div>
+                                <div className="grid grid-cols-3 py-2">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Hak Akses Modul</span>
+                                    <span className="text-sm font-medium text-slate-600 col-span-2">Modul Antrian Konflik Jadwal Otomatis Aktif</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
