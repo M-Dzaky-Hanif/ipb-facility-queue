@@ -7,6 +7,8 @@ import DashboardTendik from './pages/DashboardTendik';
 import Gallery from './pages/Gallery';
 import BookingForm from './pages/BookingForm';
 import BookingAlatForm from './pages/BookingAlatForm';
+import DashboardAdmin from './pages/DashboardAdmin';
+import DashboardStaff from './pages/DashboardStaff';
 
 export default function App() {
     return (
@@ -21,6 +23,8 @@ export default function App() {
                     <Route path="/gallery" element={<Gallery />} /> 
                     <Route path="/booking-form" element={<BookingForm />} />
                     <Route path="/booking-alat" element={<BookingAlatForm />} />
+                    <Route path="/dashboard-admin" element={<DashboardAdmin />} />
+                    <Route path="/dashboard-staff" element={<DashboardStaff />} />
                 </Routes>
             </Router>
         </AuthProvider>

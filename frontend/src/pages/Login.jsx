@@ -15,18 +15,35 @@ export default function Login() {
         setError('');
         setLoading(true);
 
-        const result = await loginAction(email, password);
-        setLoading(false);
+        try {
+            const result = await loginAction(email, password);
+            setLoading(false);
 
-        if (result.success) {
-            // Arahkan ke dashboard spesifik sesuai peran
-            if (result.user.role.toLowerCase() === 'mahasiswa') {
-                navigate('/gallery');
+            if (result.success) {
+                // Pengaman: Ambil role dengan opsional chaining (?.) dan konversi ke huruf kecil
+                const userRole = result.user?.role?.toLowerCase();
+                
+                console.log("Berhasil login, role terdeteksi:", userRole); // Membantu debugging di inspect element
+
+                if (userRole === 'mahasiswa') {
+                    navigate('/gallery');
+                } else if (userRole === 'tendik') {
+                    navigate('/dashboard-tendik');
+                } else if (userRole === 'admin') {
+                    navigate('/dashboard-admin');
+                } else if (userRole === 'staff_ruang') {
+                    navigate('/dashboard-staff');
+                } else {
+                    console.warn("Role tidak dikenali oleh sistem frontend:", userRole);
+                    setError("Akun Anda tidak memiliki hak akses dashboard yang valid.");
+                }
             } else {
-                navigate('/dashboard-tendik');
+                setError(result.message || "Email atau password salah.");
             }
-        } else {
-            setError(result.message);
+        } catch (err) {
+            setLoading(false);
+            setError("Terjadi kesalahan jaringan saat mencoba login.");
+            console.error("Login error:", err);
         }
     };
 

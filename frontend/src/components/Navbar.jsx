@@ -28,21 +28,23 @@ export default function Navbar() {
                 </Link>
 
                 {/* MENU NAVIGASI UTAMA (Tanpa Tombol Profil di Header sesuai Request) */}
+                {/* MENU NAVIGASI UTAMA */}
                 {user && (
                     <div className="hidden md:flex items-center space-x-6 text-sm font-semibold">
-                        {user.role === 'mahasiswa' ? (
+                        {user.role === 'mahasiswa' && (
                             <>
-                                <Link to="/gallery" className="text-slate-600 hover:text-indigo-600 transition">
-                                    Katalog Gallery
-                                </Link>
-                                <Link to="/dashboard-mahasiswa" className="text-slate-600 hover:text-indigo-600 transition">
-                                    Profil & Histori Antrian
-                                </Link>
+                                <Link to="/gallery" className="text-slate-600 hover:text-indigo-600 transition">Katalog Gallery</Link>
+                                <Link to="/dashboard-mahasiswa" className="text-slate-600 hover:text-indigo-600 transition">Profil & Histori Antrian</Link>
                             </>
-                        ) : (
-                            <Link to="/dashboard-tendik" className="text-indigo-600 transition">
-                                Konsol Administrasi Tendik
-                            </Link>
+                        )}
+                        {user.role === 'tendik' && (
+                            <Link to="/dashboard-tendik" className="text-indigo-600 transition">Konsol Evaluasi Tendik</Link>
+                        )}
+                        {user.role === 'admin' && (
+                            <Link to="/dashboard-admin" className="text-indigo-600 transition">Admin Command Center</Link>
+                        )}
+                        {user.role === 'staff_ruang' && (
+                            <Link to="/dashboard-staff" className="text-indigo-600 transition">Jadwal Operasional Staff</Link>
                         )}
                     </div>
                 )}
