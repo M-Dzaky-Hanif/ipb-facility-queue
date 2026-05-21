@@ -11,6 +11,9 @@ class UserBase(BaseModel):
     id_admin: Optional[str] = None
     id_staff: Optional[str] = None
 
+class UserCreate(UserBase):
+    password: str
+
 class UserRegister(UserBase):
     password: str
 
