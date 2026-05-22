@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import API from '../api/axiosInstance';
@@ -8,6 +8,7 @@ import ConfirmModal from '../components/ConfirmModal';
 export default function DashboardTendik() {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const prevPendingIdsRef = useRef(null);
     const [bookings, setBookings] = useState([]);
     const [error, setError] = useState('');
     const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0 });
@@ -20,6 +21,24 @@ export default function DashboardTendik() {
     const [showActionConfirm, setShowActionConfirm] = useState(false);
     const [pendingAction, setPendingAction] = useState(null); // { id_booking, statusAction }
 
+    // State untuk Ubah Password Profil Tendik
+    const [pwdForm, setPwdForm] = useState({ old_password: '', new_password: '' });
+    const [pwdSuccess, setPwdSuccess] = useState('');
+    const [pwdError, setPwdError] = useState('');
+
+    const handlePasswordChange = async (e) => {
+        e.preventDefault();
+        setPwdSuccess('');
+        setPwdError('');
+        try {
+            await API.put(`/auth/users/${user.id}/change-password`, pwdForm);
+            setPwdSuccess("Password berhasil diperbarui! ✅");
+            setPwdForm({ old_password: '', new_password: '' });
+        } catch (err) {
+            setPwdError(err.response?.data?.detail || "Gagal memperbarui password.");
+        }
+    };
+
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3500);
@@ -30,12 +49,31 @@ export default function DashboardTendik() {
             const res = await API.get('/bookings/');
             const allBookings = res.data;
             
-            const pending = allBookings.filter(b => b.status?.toUpperCase() === 'PENDING').length;
+            const pendingBookings = allBookings.filter(b => b.status?.toUpperCase() === 'PENDING');
+            const pending = pendingBookings.length;
             const approved = allBookings.filter(b => b.status?.toUpperCase() === 'APPROVED').length;
             const rejected = allBookings.filter(b => b.status?.toUpperCase() === 'REJECTED').length;
             
             setStats({ pending, approved, rejected });
-            setBookings(allBookings.filter(b => b.status?.toUpperCase() === 'PENDING'));
+            setBookings(pendingBookings);
+
+            const pendingIds = pendingBookings.map(b => b.id_booking);
+            if (prevPendingIdsRef.current !== null) {
+                const newBookings = pendingBookings.filter(b => !prevPendingIdsRef.current.includes(b.id_booking));
+                if (newBookings.length > 0) {
+                    newBookings.forEach(b => {
+                        showToast(`Ada pengajuan baru masuk: #BK-00${b.id_booking} (${b.fasilitas_id})! 🔔`, 'info');
+                    });
+                    try {
+                        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
+                        audio.volume = 0.4;
+                        audio.play();
+                    } catch (e) {
+                        console.log("Audio autoplay blocked by browser policy");
+                    }
+                }
+            }
+            prevPendingIdsRef.current = pendingIds;
         } catch (err) {
             console.error("Gagal memuat list booking:", err);
             setError("Gagal mengambil data transaksi pendaftaran.");
@@ -46,6 +84,8 @@ export default function DashboardTendik() {
     useEffect(() => {
         if (user) {
             fetchAllBookings();
+            const interval = setInterval(fetchAllBookings, 8000); // Polling setiap 8 detik
+            return () => clearInterval(interval);
         }
     }, [fetchAllBookings, user]);
 
@@ -231,6 +271,46 @@ export default function DashboardTendik() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* 🔥 SECTION UBAH PASSWORD */}
+                        <div className="border-t border-slate-100 p-6 bg-slate-50/50">
+                            <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                🔑 Ubah Password Akun
+                            </h3>
+                            {pwdSuccess && <div className="p-3 mb-4 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-100">{pwdSuccess}</div>}
+                            {pwdError && <div className="p-3 mb-4 bg-rose-50 text-rose-600 text-xs font-semibold rounded-xl border border-rose-100">{pwdError}</div>}
+                            
+                            <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+                                <div>
+                                    <label className="block text-xs font-extrabold text-slate-500 uppercase mb-1">Password Lama</label>
+                                    <input 
+                                        type="password" 
+                                        required 
+                                        value={pwdForm.old_password}
+                                        onChange={e => setPwdForm(prev => ({...prev, old_password: e.target.value}))}
+                                        className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-extrabold text-slate-500 uppercase mb-1">Password Baru</label>
+                                    <input 
+                                        type="password" 
+                                        required 
+                                        value={pwdForm.new_password}
+                                        onChange={e => setPwdForm(prev => ({...prev, new_password: e.target.value}))}
+                                        className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                                <button 
+                                    type="submit" 
+                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition duration-150 cursor-pointer shadow-xs shadow-indigo-100"
+                                >
+                                    Perbarui Password
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 )}
             </div>
@@ -238,9 +318,9 @@ export default function DashboardTendik() {
             {/* 🔥 TOAST NOTIFICATION */}
             {toast && (
                 <div className={`fixed bottom-6 right-6 z-50 text-white px-5 py-3 rounded-2xl flex items-center gap-3 shadow-2xl animate-fade-in ${
-                    toast.type === 'success' ? 'bg-emerald-600' : toast.type === 'error' ? 'bg-rose-600' : 'bg-amber-500'
+                    toast.type === 'success' ? 'bg-emerald-600' : toast.type === 'error' ? 'bg-rose-600' : toast.type === 'info' ? 'bg-indigo-600 shadow-indigo-100' : 'bg-amber-500'
                 }`}>
-                    <span className="text-lg">{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : '⚠️'}</span>
+                    <span className="text-lg">{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : toast.type === 'info' ? '🔔' : '⚠️'}</span>
                     <span className="flex-1 font-semibold text-sm">{toast.message}</span>
                     <button onClick={() => setToast(null)} className="text-white/70 hover:text-white text-lg font-bold cursor-pointer">×</button>
                 </div>

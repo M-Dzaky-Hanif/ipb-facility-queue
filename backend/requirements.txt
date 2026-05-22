@@ -7,3 +7,4 @@ pydantic-settings
 alembic
 bcrypt==3.2.2
 email-validator
+cryptography

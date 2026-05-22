@@ -1,11 +1,29 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import API from '../api/axiosInstance';
 
 export default function Profile() {
     const { user } = useAuth();
     const navigate = useNavigate();
+
+    const [pwdForm, setPwdForm] = useState({ old_password: '', new_password: '' });
+    const [pwdSuccess, setPwdSuccess] = useState('');
+    const [pwdError, setPwdError] = useState('');
+
+    const handlePasswordChange = async (e) => {
+        e.preventDefault();
+        setPwdSuccess('');
+        setPwdError('');
+        try {
+            await API.put(`/auth/users/${user.id}/change-password`, pwdForm);
+            setPwdSuccess("Password berhasil diperbarui! ✅");
+            setPwdForm({ old_password: '', new_password: '' });
+        } catch (err) {
+            setPwdError(err.response?.data?.detail || "Gagal memperbarui password.");
+        }
+    };
 
     useEffect(() => {
         if (!user) {
@@ -63,6 +81,46 @@ export default function Profile() {
                                 </span>
                             </div>
                         </div>
+                    </div>
+
+                    {/* 🔥 SECTION UBAH PASSWORD */}
+                    <div className="border-t border-slate-100 p-6 bg-slate-50/50">
+                        <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            🔑 Ubah Password Akun
+                        </h3>
+                        {pwdSuccess && <div className="p-3 mb-4 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-100">{pwdSuccess}</div>}
+                        {pwdError && <div className="p-3 mb-4 bg-rose-50 text-rose-600 text-xs font-semibold rounded-xl border border-rose-100">{pwdError}</div>}
+                        
+                        <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+                            <div>
+                                <label className="block text-xs font-extrabold text-slate-500 uppercase mb-1">Password Lama</label>
+                                <input 
+                                    type="password" 
+                                    required 
+                                    value={pwdForm.old_password}
+                                    onChange={e => setPwdForm(prev => ({...prev, old_password: e.target.value}))}
+                                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition"
+                                    placeholder="••••••••"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-extrabold text-slate-500 uppercase mb-1">Password Baru</label>
+                                <input 
+                                    type="password" 
+                                    required 
+                                    value={pwdForm.new_password}
+                                    onChange={e => setPwdForm(prev => ({...prev, new_password: e.target.value}))}
+                                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition"
+                                    placeholder="••••••••"
+                                />
+                            </div>
+                            <button 
+                                type="submit" 
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition duration-150 cursor-pointer shadow-xs shadow-indigo-100"
+                            >
+                                Perbarui Password
+                            </button>
+                        </form>
                     </div>
 
                 </div>

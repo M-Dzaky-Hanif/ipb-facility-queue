@@ -72,6 +72,19 @@ async def create_booking(db: AsyncSession, booking_data: BookingCreate):
     db.add(db_booking)
     
     try:
+        await db.flush()  # Generate the ID first without committing
+        
+        # Buat Notifikasi untuk semua Staff Tendik secara otomatis
+        from app.models.user import User, UserRole
+        stmt_tendik = select(User).where(User.role == UserRole.TENDIK)
+        res_tendik = await db.execute(stmt_tendik)
+        tendiks = res_tendik.scalars().all()
+        
+        for tendik in tendiks:
+            pesan_notif = f"Pengajuan peminjaman baru (#BK-00{db_booking.id_booking}) untuk fasilitas {db_booking.fasilitas_id} butuh evaluasi Anda! 🔔"
+            db_notif = Notifikasi(user_id=tendik.id, pesan=pesan_notif)
+            db.add(db_notif)
+            
         await db.commit()
         await db.refresh(db_booking)
         return db_booking

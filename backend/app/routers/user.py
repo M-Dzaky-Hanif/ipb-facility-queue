@@ -5,7 +5,7 @@ from typing import List
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserRegister, UserLogin, UserResponse, UserCreate # Pastikan UserCreate ada di sini
+from app.schemas.user import UserRegister, UserLogin, UserResponse, UserCreate, UserPasswordUpdate
 from app.crud import user as crud_user
 from app.core.security import get_password_hash
 
@@ -62,4 +62,26 @@ async def create_user_by_admin(user_in: UserCreate, db: AsyncSession = Depends(g
     await db.commit()
     await db.refresh(new_user)
     return new_user
+
+@router.put("/users/{user_id}/change-password")
+async def change_password(user_id: int, password_data: UserPasswordUpdate, db: AsyncSession = Depends(get_db)):
+    # Ambil user
+    stmt = select(User).where(User.id == user_id)
+    res = await db.execute(stmt)
+    user = res.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan!")
+        
+    from app.core.security import verify_password, get_password_hash
+    if not verify_password(password_data.old_password, user.password):
+        raise HTTPException(status_code=400, detail="Password lama salah!")
+        
+    user.password = get_password_hash(password_data.new_password)
+    try:
+        await db.commit()
+        return {"message": "Password berhasil diperbarui! ✅"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Gagal memperbarui password: {str(e)}")
 
