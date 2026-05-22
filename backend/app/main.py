@@ -11,7 +11,7 @@ from app.models.notifikasi import Notifikasi
 from app.models.queue import Queue
 
 # IMPORT ROUTER BARU
-from app.routers import fasilitas, alat, user as auth_user, booking, queue as queue_router
+from app.routers import fasilitas, alat, user as auth_user, booking, queue as queue_router, notifikasi as notif_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,6 +41,7 @@ app.include_router(alat.router, prefix="/api/v1")
 app.include_router(auth_user.router, prefix="/api/v1")
 app.include_router(booking.router, prefix="/api/v1")
 app.include_router(queue_router.router, prefix="/api/v1")
+app.include_router(notif_router.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

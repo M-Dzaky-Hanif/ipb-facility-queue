@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
+from app.models.fasilitas import FacilityStatus
 
 class AlatBase(BaseModel):
     id_alat: str
@@ -18,6 +19,8 @@ class FasilitasBase(BaseModel):
     nama_fasilitas: str
     kapasitas: int
     lokasi: str
+    status: str = FacilityStatus.AVAILABLE.value
+    fasilitas_pendukung: Optional[str] = None
 
 class FasilitasiCreate(FasilitasBase):
     pass

@@ -18,3 +18,17 @@ async def create_alat(alat: AlatBase, db: AsyncSession = Depends(get_db)):
 @router.get("/", response_model=List[AlatResponse])
 async def read_all_alat(db: AsyncSession = Depends(get_db)):
     return await crud_alat.get_all_alat(db=db)
+
+@router.put("/{id_alat}", response_model=AlatResponse)
+async def update_alat(id_alat: str, alat_update: AlatBase, db: AsyncSession = Depends(get_db)):
+    updated_alat = await crud_alat.update_alat(db=db, id_alat=id_alat, alat_update=alat_update)
+    if not updated_alat:
+        raise HTTPException(status_code=404, detail="Alat tidak ditemukan!")
+    return updated_alat
+
+@router.delete("/{id_alat}")
+async def delete_alat(id_alat: str, db: AsyncSession = Depends(get_db)):
+    success = await crud_alat.delete_alat(db=db, id_alat=id_alat)
+    if not success:
+        raise HTTPException(status_code=404, detail="Alat tidak ditemukan!")
+    return {"message": f"Alat dengan ID {id_alat} berhasil dihapus!"}

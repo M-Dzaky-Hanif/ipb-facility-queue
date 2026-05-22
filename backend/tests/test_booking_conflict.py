@@ -57,6 +57,21 @@ async def test_skenario_jadwal_bentrok_ke_antrian():
         booking1_id = res_book1.json()["id_booking"]
 
         # =========================================================================
+        # LANGKAH 3b: Mahasiswa 2 Mengajukan Booking di Slot yang Sama Saat Status Mahasiswa 1 Masih Pending
+        # =========================================================================
+        payload_clash = {
+            "fasilitas_id": fas_id,
+            "tanggal": "2026-06-01",
+            "jam": "09:00:00",
+            "keperluan": "Belajar Kelompok Git & GitHub",
+            "mahasiswa_id": mhs2_id
+        }
+        res_clash = await ac.post("/bookings/", json=payload_clash)
+        assert res_clash.status_code == 201
+        assert res_clash.json()["status"] == "Pending"
+        booking_clash_id = res_clash.json()["id_booking"]
+
+        # =========================================================================
         # LANGKAH 4: Tendik Menyetujui Booking Mahasiswa 1 (Status Berubah: Approved)
         # =========================================================================
         payload_approval = {
@@ -68,7 +83,14 @@ async def test_skenario_jadwal_bentrok_ke_antrian():
         assert res_appr.json()["status"] == "Approved"
 
         # =========================================================================
-        # LANGKAH 5: TES SINKRONISASI BENTROK (Mahasiswa 2 Booking di Waktu yang Sama)
+        # LANGKAH 4b: Tendik Mencoba Menyetujui Booking Clash Mahasiswa 2 -> HARUS GAGAL (HTTP 400)
+        # =========================================================================
+        res_appr_clash = await ac.put(f"/bookings/{booking_clash_id}/approval", json=payload_approval)
+        assert res_appr_clash.status_code == 400
+        assert "sudah disetujui" in res_appr_clash.json()["detail"]
+
+        # =========================================================================
+        # LANGKAH 5: TES SINKRONISASI BENTROK (Mahasiswa 2 Booking di Waktu yang Sama Baru Masuk Antrian Langsung)
         # =========================================================================
         payload_booking2 = {
             "fasilitas_id": fas_id,
@@ -86,3 +108,31 @@ async def test_skenario_jadwal_bentrok_ke_antrian():
         assert response_data["status"] == "queued"
         assert response_data["nomor_antrian"] == 1
         assert response_data["fasilitas_id"] == fas_id
+
+        # =========================================================================
+        # LANGKAH 6: TES PEMELIHARAAN DIBLOKIR (Maintenance Block Verification)
+        # =========================================================================
+        # Daftarkan Fasilitas dengan Status "Maintenance"
+        data_fas_maint = {
+            "id_fasilitas": f"LAB-MAINT-{suffix}",
+            "nama_fasilitas": "Laboratorium Pemeliharaan",
+            "kapasitas": 10,
+            "lokasi": "FMIPA Lt. 3",
+            "status": "Maintenance",
+            "fasilitas_pendukung": "AC, Proyektor"
+        }
+        res_fas_maint = await ac.post("/fasilitas/", json=data_fas_maint)
+        assert res_fas_maint.status_code == 200
+        fas_maint_id = res_fas_maint.json()["id_fasilitas"]
+
+        # Ajukan Booking ke Ruang Maintenance (Harus diblokir, mengembalikan HTTP 400 Bad Request)
+        payload_booking_maint = {
+            "fasilitas_id": fas_maint_id,
+            "tanggal": "2026-06-01",
+            "jam": "09:00:00",
+            "keperluan": "Praktikum Pemeliharaan",
+            "mahasiswa_id": mhs1_id
+        }
+        res_book_maint = await ac.post("/bookings/", json=payload_booking_maint)
+        assert res_book_maint.status_code == 400
+        assert "Fasilitas sedang dalam maintenance" in res_book_maint.json()["detail"]

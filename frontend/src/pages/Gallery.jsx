@@ -22,6 +22,10 @@ export default function Gallery() {
     // States untuk Detail Panel Sisi Kanan
     const [selectedFas, setSelectedFas] = useState(null);
     const [alatDiRuangan, setAlatDiRuangan] = useState([]);
+    
+    // 🔥 STATES BARU: Untuk kalender mingguan & dynamic occupancy
+    const [bookings, setBookings] = useState([]);
+    const [selectedCalendarDate, setSelectedCalendarDate] = useState(new Date().toLocaleDateString('en-CA'));
 
     useEffect(() => {
         if (!user) navigate('/login', { replace: true });
@@ -29,19 +33,51 @@ export default function Gallery() {
 
     const fetchData = useCallback(async () => {
         try {
-            const [resFas, resAlat] = await Promise.all([
+            const [resFas, resAlat, resBook] = await Promise.all([
                 API.get('/fasilitas/'),
-                API.get('/alat/')
+                API.get('/alat/'),
+                API.get('/bookings/')
             ]);
             
-            const mappedFas = resFas.data.map((item, idx) => ({
-                ...item,
-                kategori: item.id_fasilitas?.toLowerCase().includes('lab') ? 'lab' : 
-                          item.id_fasilitas?.toLowerCase().includes('lap') ? 'lapangan' : 'ruang',
-                fakultas: idx % 2 === 0 ? 'FMIPA' : idx % 3 === 0 ? 'SV' : 'FAPERTA',
-                status_pinjam: idx % 4 === 0 ? 'Dipesan' : 'Tersedia',
-                isPopuler: idx % 2 === 0
-            }));
+            const bData = resBook.data || [];
+            setBookings(bData);
+            
+            const todayStr = new Date().toLocaleDateString('en-CA');
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            
+            const getMinutes = (timeStr) => {
+                if (!timeStr) return 0;
+                const parts = timeStr.split(':');
+                return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+            };
+            
+            const mappedFas = resFas.data.map((item, idx) => {
+                let status_pinjam = 'Tersedia';
+                if (item.status === 'Maintenance') {
+                    status_pinjam = 'Maintenance';
+                } else {
+                    const hasActiveBooking = bData.some(b => {
+                        return b.fasilitas_id === item.id_fasilitas && 
+                               b.status === 'Approved' && 
+                               b.tanggal === todayStr &&
+                               currentMinutes >= getMinutes(b.jam) &&
+                               currentMinutes < (getMinutes(b.jam) + 120);
+                    });
+                    if (hasActiveBooking) {
+                        status_pinjam = 'Sedang Digunakan';
+                    }
+                }
+                
+                return {
+                    ...item,
+                    kategori: item.id_fasilitas?.toLowerCase().includes('lab') ? 'lab' : 
+                              item.id_fasilitas?.toLowerCase().includes('lap') ? 'lapangan' : 'ruang',
+                    fakultas: idx % 2 === 0 ? 'FMIPA' : idx % 3 === 0 ? 'SV' : 'FAPERTA',
+                    status_pinjam,
+                    isPopuler: idx % 2 === 0
+                };
+            });
 
             const mappedAlat = resAlat.data.map((alat, idx) => ({
                 ...alat,
@@ -285,7 +321,8 @@ export default function Gallery() {
                                     <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="p-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none">
                                         <option value="">Semua Status Pinjam</option>
                                         <option value="Tersedia">🟢 Tersedia</option>
-                                        <option value="Dipesan">🔴 Sedang Dipesan / Penuh</option>
+                                        <option value="Sedang Digunakan">🔴 Sedang Digunakan</option>
+                                        <option value="Maintenance">🔧 Maintenance</option>
                                     </select>
                                 </div>
 
@@ -306,7 +343,15 @@ export default function Gallery() {
                                                 <div>
                                                     <div className="flex justify-between items-start mb-2">
                                                         <span className="text-xs font-mono px-2 py-0.5 bg-slate-100 rounded text-slate-500 font-bold">{fas.id_fasilitas}</span>
-                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${fas.status_pinjam === 'Tersedia' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>{fas.status_pinjam}</span>
+                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded border transition-all duration-300 ${
+                                                            fas.status_pinjam === 'Tersedia' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                                            fas.status_pinjam === 'Sedang Digunakan' ? 'bg-rose-50 text-rose-700 border-rose-100 animate-pulse' :
+                                                            'bg-slate-100 text-slate-600 border-slate-200'
+                                                        }`}>{
+                                                            fas.status_pinjam === 'Tersedia' ? '🟢 Tersedia' :
+                                                            fas.status_pinjam === 'Sedang Digunakan' ? '🔴 Sedang Digunakan' :
+                                                            '🔧 Maintenance'
+                                                        }</span>
                                                     </div>
                                                     <h3 className="text-lg font-bold text-slate-800 leading-snug">{fas.nama_fasilitas}</h3>
                                                     <p className="text-sm text-slate-400 mt-1">📍 {fas.lokasi}</p>
@@ -321,13 +366,13 @@ export default function Gallery() {
 
                     {/* SISI KANAN: PANEL DETIL INFORMASI */}
                     {selectedFas && (
-                        <div className="w-full lg:w-96 bg-white border border-slate-200 rounded-xl p-6 shadow-sm sticky top-6 h-fit max-h-[calc(100vh-50px)] overflow-y-auto">
+                        <div id="detail-panel" className="w-full lg:w-96 bg-white border border-slate-200 rounded-xl p-6 shadow-sm sticky top-6 h-fit max-h-[calc(100vh-50px)] overflow-y-auto animate-[slideIn_0.3s_ease-out]">
                             <div className="flex justify-between items-start mb-4">
                                 <h3 className="text-xl font-bold text-slate-900">Informasi Detail</h3>
                                 <button onClick={() => setSelectedFas(null)} className="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕ Close</button>
                             </div>
                             
-                            <div className="space-y-3 mb-6">
+                            <div className="space-y-3 mb-4">
                                 <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
                                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nama Sarana</p>
                                     <p className="text-sm font-bold text-slate-800 mt-0.5">{selectedFas.nama_fasilitas}</p>
@@ -343,6 +388,139 @@ export default function Gallery() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* FITUR 3: FASILITAS PENDUKUNG (AMENITIES) */}
+                            <div className="mb-6">
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">⚡ Fasilitas Pendukung (Amenities)</p>
+                                {selectedFas.fasilitas_pendukung ? (
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {selectedFas.fasilitas_pendukung.split(',').map((item, idx) => {
+                                            const name = item.trim();
+                                            return (
+                                                <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100/40 text-indigo-700 text-xs font-semibold">
+                                                    {name}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-slate-400 italic">Spesifikasi belum dilengkapi.</p>
+                                )}
+                            </div>
+
+                            {/* FITUR 3: PROTEKSI MAINTENANCE & BANNER WARNING */}
+                            {selectedFas.status === 'Maintenance' ? (
+                                <div className="p-4 bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-300 rounded-xl flex items-start gap-3 text-slate-700 text-xs font-semibold mb-6">
+                                    <div className="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center text-lg shrink-0 animate-pulse">🔧</div>
+                                    <div>
+                                        <p className="font-bold text-sm text-slate-800">Under Maintenance</p>
+                                        <p className="mt-1 text-slate-500 font-medium leading-relaxed">Fasilitas ini sedang dalam perawatan berkala dan tidak dapat menerima peminjaman untuk saat ini.</p>
+                                        <p className="mt-2 text-indigo-600 font-semibold text-[10px] uppercase tracking-wide">📞 Hubungi Staff Ruangan untuk info jadwal buka kembali</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                /* FITUR 1 & 2: INTERACTIVE WEEKLY CALENDAR SCHEDULE TIMETABLE */
+                                <div className="border-t border-slate-100 pt-4 mb-6">
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-3">📅 Kalender Jadwal Mingguan</p>
+                                    
+                                    {/* HORIZONTAL DATE SLIDER */}
+                                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200 mb-4">
+                                        {(() => {
+                                            const days = [];
+                                            for (let i = 0; i < 7; i++) {
+                                                const tempDate = new Date();
+                                                tempDate.setDate(tempDate.getDate() + i);
+                                                
+                                                const year = tempDate.getFullYear();
+                                                const month = String(tempDate.getMonth() + 1).padStart(2, '0');
+                                                const dateVal = String(tempDate.getDate()).padStart(2, '0');
+                                                const dateStr = `${year}-${month}-${dateVal}`;
+                                                
+                                                const dayName = tempDate.toLocaleDateString('id-ID', { weekday: 'short' });
+                                                const dayNum = tempDate.getDate();
+                                                const monthName = tempDate.toLocaleDateString('id-ID', { month: 'short' });
+                                                days.push({ dateStr, dayName, dayNum, monthName });
+                                            }
+                                            return days.map((d) => (
+                                                <button
+                                                    key={d.dateStr}
+                                                    type="button"
+                                                    onClick={() => setSelectedCalendarDate(d.dateStr)}
+                                                    className={`flex flex-col items-center p-2 rounded-xl border shrink-0 min-w-[56px] transition cursor-pointer ${
+                                                        selectedCalendarDate === d.dateStr 
+                                                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/10' 
+                                                            : 'border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-500'
+                                                    }`}
+                                                >
+                                                    <span className="text-[9px] font-bold uppercase tracking-wider">{d.dayName}</span>
+                                                    <span className="text-base font-black mt-0.5">{d.dayNum}</span>
+                                                    <span className="text-[8px] font-bold uppercase text-slate-400 mt-0.5">{d.monthName}</span>
+                                                </button>
+                                            ));
+                                        })()}
+                                    </div>
+
+                                    {/* TIME SLOTS CHECKLIST */}
+                                    <div className="space-y-2">
+                                        {[
+                                            { time: '07:00:00', label: '07:00 WIB' },
+                                            { time: '09:00:00', label: '09:00 WIB' },
+                                            { time: '11:00:00', label: '11:00 WIB' },
+                                            { time: '13:00:00', label: '13:00 WIB' },
+                                            { time: '15:00:00', label: '15:00 WIB' },
+                                            { time: '17:00:00', label: '17:00 WIB' }
+                                        ].map((slot) => {
+                                            const bookingInSlot = bookings.find(b => 
+                                                b.fasilitas_id === selectedFas.id_fasilitas && 
+                                                b.tanggal === selectedCalendarDate && 
+                                                b.jam?.substring(0, 5) === slot.time.substring(0, 5)
+                                            );
+
+                                            if (bookingInSlot && bookingInSlot.status === 'Approved') {
+                                                return (
+                                                    <div key={slot.time} className="flex justify-between items-center p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-xs">
+                                                        <div>
+                                                            <p className="font-bold text-rose-800">{slot.label}</p>
+                                                            <p className="text-[10px] text-rose-500 mt-0.5 font-medium">🔴 Terisi (Peminjaman Disetujui)</p>
+                                                        </div>
+                                                        <span className="px-2.5 py-1 bg-rose-100 text-rose-700 font-bold rounded-lg text-[10px] uppercase border border-rose-200/50">Full 🔒</span>
+                                                    </div>
+                                                );
+                                            } else if (bookingInSlot && bookingInSlot.status === 'Pending') {
+                                                return (
+                                                    <div key={slot.time} className="flex justify-between items-center p-2.5 bg-amber-50 border border-amber-100 rounded-xl text-xs">
+                                                        <div>
+                                                            <p className="font-bold text-amber-800">{slot.label}</p>
+                                                            <p className="text-[10px] text-amber-500 mt-0.5 font-medium">🟡 Antrian Aktif (Belum Disetujui)</p>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => navigate('/booking-form', { state: { fasilitas: selectedFas, prefilledDate: selectedCalendarDate, prefilledTime: slot.time } })}
+                                                            className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-3 py-1.5 rounded-lg shadow-xs transition text-[10px] uppercase cursor-pointer"
+                                                        >
+                                                            Antri 👥
+                                                        </button>
+                                                    </div>
+                                                );
+                                            } else {
+                                                return (
+                                                    <div key={slot.time} className="flex justify-between items-center p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl text-xs">
+                                                        <div>
+                                                            <p className="font-bold text-emerald-800">{slot.label}</p>
+                                                            <p className="text-[10px] text-emerald-500 mt-0.5 font-medium">🟢 Kosong (Siap Dipesan)</p>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => navigate('/booking-form', { state: { fasilitas: selectedFas, prefilledDate: selectedCalendarDate, prefilledTime: slot.time } })}
+                                                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3 py-1.5 rounded-lg shadow-xs transition text-[10px] uppercase cursor-pointer"
+                                                        >
+                                                            Pesan
+                                                        </button>
+                                                    </div>
+                                                );
+                                            }
+                                        })}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* DAFTAR ALAT YANG BISA DIPINJAM DALAM PANEL */}
                             <div className="border-t border-slate-100 pt-4">
@@ -376,12 +554,22 @@ export default function Gallery() {
                                 )}
                             </div>
 
-                            <button
-                                onClick={() => navigate('/booking-form', { state: { fasilitas: selectedFas } })}
-                                className="w-full mt-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md shadow-indigo-100 text-center transition duration-200 cursor-pointer text-sm block"
-                            >
-                                Ajukan Peminjaman Ruangan 🚀
-                            </button>
+                            {/* TOMBOL BOOKING UMUM (HANYA AKTIF JIKA TIDAK MAINTENANCE) */}
+                            {selectedFas.status === 'Maintenance' ? (
+                                <button
+                                    disabled
+                                    className="w-full mt-6 py-3 bg-slate-100 text-slate-400 font-bold rounded-xl text-center cursor-not-allowed text-sm block border border-slate-200 border-dashed"
+                                >
+                                    🔧 Under Maintenance — Booking Disabled
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => navigate('/booking-form', { state: { fasilitas: selectedFas, prefilledDate: selectedCalendarDate } })}
+                                    className="w-full mt-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md shadow-indigo-100 text-center transition duration-200 cursor-pointer text-sm block"
+                                >
+                                    Ajukan Peminjaman Ruangan 🚀
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

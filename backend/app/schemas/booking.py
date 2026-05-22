@@ -4,7 +4,9 @@ from typing import Optional
 from app.models.booking import BookingStatus
 
 class BookingBase(BaseModel):
-    fasilitas_id: str
+    fasilitas_id: Optional[str] = None
+    alat_id: Optional[str] = None
+    jumlah_alat: Optional[int] = None
     tanggal: date
     jam: time
     keperluan: str

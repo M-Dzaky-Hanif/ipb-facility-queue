@@ -4,11 +4,19 @@ from sqlalchemy import func  # Wajib diimport untuk mencari nomor antrian tertin
 from fastapi import HTTPException
 
 from app.models.booking import Booking, BookingStatus
+from app.models.fasilitas import Fasilitas, FacilityStatus
 from app.models.queue import Queue  # Wajib diimport untuk memasukkan user ke antrian
 from app.models.notifikasi import Notifikasi
 from app.schemas.booking import BookingCreate, BookingApproval
 
 async def create_booking(db: AsyncSession, booking_data: BookingCreate):
+    # 0. Validasi: Cek apakah fasilitas sedang dalam perbaikan
+    stmt_fas = select(Fasilitas).where(Fasilitas.id_fasilitas == booking_data.fasilitas_id)
+    res_fas = await db.execute(stmt_fas)
+    fasilitas = res_fas.scalar_one_or_none()
+    if fasilitas and fasilitas.status == FacilityStatus.MAINTENANCE.value:
+        raise HTTPException(status_code=400, detail="Fasilitas sedang dalam maintenance dan tidak dapat dipesan saat ini.")
+
     # 1. Validasi: Cek apakah jadwal bentrok pada fasilitas, tanggal, dan jam yang sama
     stmt_cek = select(Booking).where(
         Booking.fasilitas_id == booking_data.fasilitas_id,
@@ -88,6 +96,24 @@ async def manage_booking_approval(db: AsyncSession, id_booking: int, approval: B
     
     if not db_booking:
         raise HTTPException(status_code=404, detail="Data booking tidak ditemukan!")
+    
+    # 1b. Jika disetujui, validasi apakah ada booking lain yang sudah APPROVED di slot yang sama
+    if approval.status == BookingStatus.APPROVED:
+        if db_booking.fasilitas_id:
+            stmt_cek = select(Booking).where(
+                Booking.fasilitas_id == db_booking.fasilitas_id,
+                Booking.tanggal == db_booking.tanggal,
+                Booking.jam == db_booking.jam,
+                Booking.status == BookingStatus.APPROVED,
+                Booking.id_booking != id_booking
+            )
+            res_cek = await db.execute(stmt_cek)
+            existing_approved = res_cek.scalar_one_or_none()
+            if existing_approved:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Fasilitas {db_booking.fasilitas_id} sudah disetujui untuk peminjaman lain pada tanggal {db_booking.tanggal} jam {db_booking.jam}. Harap tolak atau batalkan jadwal bentrok tersebut terlebih dahulu!"
+                )
     
     # 2. Update status dan tendik pengambil keputusan
     db_booking.status = approval.status

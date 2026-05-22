@@ -34,7 +34,7 @@ async def seed_data():
             # ==========================================
             # 1. SEED DATA USER
             # ==========================================
-            print("⏳ Menambahkan data Users...")
+            print("[SEED] Menambahkan data Users...")
             default_password = get_password_hash("password123")
             
             users = [
@@ -63,23 +63,23 @@ async def seed_data():
             # ==========================================
             # 2. SEED DATA FASILITAS (Ruang, Lab, Lapangan)
             # ==========================================
-            print("⏳ Menambahkan data Fasilitas...")
+            print("[SEED] Menambahkan data Fasilitas...")
             fasilitas_data = [
                 # Ruang Kelas
-                Fasilitas(id_fasilitas="RK-CCR1", nama_fasilitas="Ruang Kelas CCR 1.01", kapasitas=100, lokasi="Gedung CCR Lt. 1"),
-                Fasilitas(id_fasilitas="RK-CCR2", nama_fasilitas="Ruang Kelas CCR 1.02", kapasitas=100, lokasi="Gedung CCR Lt. 1"),
-                Fasilitas(id_fasilitas="RK-GKU1", nama_fasilitas="Auditorium GKU", kapasitas=300, lokasi="Gedung Kuliah Umum"),
-                Fasilitas(id_fasilitas="RK-FAPERTA", nama_fasilitas="Ruang Seminar Faperta", kapasitas=50, lokasi="Fakultas Pertanian"),
+                Fasilitas(id_fasilitas="RK-CCR1", nama_fasilitas="Ruang Kelas CCR 1.01", kapasitas=100, lokasi="Gedung CCR Lt. 1", status="Tersedia", fasilitas_pendukung="AC, Proyektor, WiFi, Sound System, Papan Tulis"),
+                Fasilitas(id_fasilitas="RK-CCR2", nama_fasilitas="Ruang Kelas CCR 1.02", kapasitas=100, lokasi="Gedung CCR Lt. 1", status="Tersedia", fasilitas_pendukung="AC, Proyektor, WiFi, Papan Tulis"),
+                Fasilitas(id_fasilitas="RK-GKU1", nama_fasilitas="Auditorium GKU", kapasitas=300, lokasi="Gedung Kuliah Umum", status="Tersedia", fasilitas_pendukung="AC, Proyektor Panggung, Sound System, Mic Wireless, WiFi"),
+                Fasilitas(id_fasilitas="RK-FAPERTA", nama_fasilitas="Ruang Seminar Faperta", kapasitas=50, lokasi="Fakultas Pertanian", status="Tersedia", fasilitas_pendukung="AC, Proyektor, WiFi, Whiteboard"),
                 
                 # Laboratorium
-                Fasilitas(id_fasilitas="LAB-KOM1", nama_fasilitas="Laboratorium Komputer 1", kapasitas=40, lokasi="Departemen Ilmu Komputer Lt. 2"),
-                Fasilitas(id_fasilitas="LAB-BIO1", nama_fasilitas="Laboratorium Biologi Terpadu", kapasitas=30, lokasi="Fakultas MIPA Lt. 1"),
-                Fasilitas(id_fasilitas="LAB-KIM1", nama_fasilitas="Laboratorium Kimia Dasar", kapasitas=25, lokasi="Gedung Kimia"),
+                Fasilitas(id_fasilitas="LAB-KOM1", nama_fasilitas="Laboratorium Komputer 1", kapasitas=40, lokasi="Departemen Ilmu Komputer Lt. 2", status="Tersedia", fasilitas_pendukung="AC, PC Desktop Core i7, LAN Gigabit, Proyektor, WiFi"),
+                Fasilitas(id_fasilitas="LAB-BIO1", nama_fasilitas="Laboratorium Biologi Terpadu", kapasitas=30, lokasi="Fakultas MIPA Lt. 1", status="Maintenance", fasilitas_pendukung="AC, Mikroskop, Kulkas Spesimen, WiFi, Lemari Asam"),
+                Fasilitas(id_fasilitas="LAB-KIM1", nama_fasilitas="Laboratorium Kimia Dasar", kapasitas=25, lokasi="Gedung Kimia", status="Tersedia", fasilitas_pendukung="AC, Lemari Asam, Tabung Reaksi Set, Alat Distilasi"),
                 
                 # Lapangan
-                Fasilitas(id_fasilitas="LAP-GYM", nama_fasilitas="Gymnasium IPB", kapasitas=500, lokasi="Kawasan Olahraga Dramaga"),
-                Fasilitas(id_fasilitas="LAP-GEL", nama_fasilitas="Stadion Gelora", kapasitas=1000, lokasi="Kawasan Olahraga Dramaga"),
-                Fasilitas(id_fasilitas="LAP-TNS", nama_fasilitas="Lapangan Tenis Outdoor", kapasitas=20, lokasi="Samping Gymnasium"),
+                Fasilitas(id_fasilitas="LAP-GYM", nama_fasilitas="Gymnasium IPB", kapasitas=500, lokasi="Kawasan Olahraga Dramaga", status="Tersedia", fasilitas_pendukung="Tribun Penonton, Ring Basket, Net Voli, Lampu Sorot"),
+                Fasilitas(id_fasilitas="LAP-GEL", nama_fasilitas="Stadion Gelora", kapasitas=1000, lokasi="Kawasan Olahraga Dramaga", status="Tersedia", fasilitas_pendukung="Lintasan Lari, Gawang Sepak Bola, Lampu Stadion, Tribun Utama"),
+                Fasilitas(id_fasilitas="LAP-TNS", nama_fasilitas="Lapangan Tenis Outdoor", kapasitas=20, lokasi="Samping Gymnasium", status="Tersedia", fasilitas_pendukung="Net Tenis, Kursi Wasit, Lampu Lapangan"),
             ]
             session.add_all(fasilitas_data)
             await session.commit()
@@ -87,7 +87,7 @@ async def seed_data():
             # ==========================================
             # 3. SEED DATA ALAT
             # ==========================================
-            print("⏳ Menambahkan data Alat Inventaris...")
+            print("[SEED] Menambahkan data Alat Inventaris...")
             alat_data = [
                 # Alat di Ruang Kelas
                 Alat(id_alat="ALT-PRJ-01", fasilitas_id="RK-CCR1", nama_alat="Proyektor Epson LCD", jumlah=2, lokasi="Lemari Kelas CCR1", kondisi="Baik"),
@@ -96,7 +96,7 @@ async def seed_data():
                 
                 # Alat di Laboratorium Komputer
                 Alat(id_alat="ALT-PC-01", fasilitas_id="LAB-KOM1", nama_alat="PC Desktop Lenovo (Core i7)", jumlah=40, lokasi="Meja Lab Komputer", kondisi="Baik"),
-                Alat(id_alat="ALT-SRV-01", fasilitas_id="LAB-KOM1", nama_alat="Local Server Switch", jumlah=1, lokasi="Rak Server Lab", kondisi="Perlu Perbaikan"),
+                Alat(id_alat="ALT-SRV-01", fasilitas_id="LAB-KOM1", nama_alat="Local Server Switch", jumlah=1, lokasi="Rak Server Lab", kondisi="Perlu Servis"),
                 
                 # Alat di Laboratorium Biologi/Kimia
                 Alat(id_alat="ALT-MIK-01", fasilitas_id="LAB-BIO1", nama_alat="Mikroskop Binokuler", jumlah=15, lokasi="Lemari Kaca Lab Bio", kondisi="Baik"),
@@ -109,10 +109,10 @@ async def seed_data():
             session.add_all(alat_data)
             await session.commit()
 
-            print("\n🎉 Semua data dummy berhasil dimasukkan ke dalam database!")
+            print("\n[SUCCESS] Semua data dummy berhasil dimasukkan ke dalam database!")
             
         except Exception as e:
-            print(f"\n❌ SEEDING GAGAL! Berikut pesan errornya:\n{e}")
+            print(f"\n[FAIL] SEEDING GAGAL! Berikut pesan errornya:\n{e}")
             await session.rollback()
 
 if __name__ == "__main__":

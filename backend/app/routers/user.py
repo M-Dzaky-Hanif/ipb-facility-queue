@@ -62,3 +62,4 @@ async def create_user_by_admin(user_in: UserCreate, db: AsyncSession = Depends(g
     await db.commit()
     await db.refresh(new_user)
     return new_user
+
