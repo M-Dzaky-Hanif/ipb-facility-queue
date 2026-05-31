@@ -15,7 +15,47 @@ export default function DashboardTendik() {
     const [toast, setToast] = useState(null);
     
     // State Kontrol Navigasi Sub-Tab Internal Tendik
-    const [activeTab, setActiveTab] = useState('evaluasi'); // Opsi: 'evaluasi' atau 'profil'
+    const [activeTab, setActiveTab] = useState('evaluasi'); // Opsi: 'evaluasi', 'antrian', atau 'profil'
+
+    // State untuk Manajemen Antrian
+    const [fasilitasList, setFasilitasList] = useState([]);
+    const [selectedFasilitas, setSelectedFasilitas] = useState('');
+    const [queueData, setQueueData] = useState([]);
+
+    const fetchFasilitas = async () => {
+        try {
+            const res = await API.get('/fasilitas/');
+            setFasilitasList(res.data);
+            if (res.data.length > 0) setSelectedFasilitas(res.data[0].id_fasilitas);
+        } catch (err) {
+            console.error("Gagal memuat list fasilitas", err);
+        }
+    };
+
+    const fetchQueueForFacility = async (fasId) => {
+        if (!fasId) return;
+        try {
+            const res = await API.get(`/queues/facility/${fasId}`);
+            setQueueData(res.data);
+        } catch (err) {
+            console.error("Gagal memuat antrian fasilitas", err);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'antrian') {
+            fetchQueueForFacility(selectedFasilitas);
+        }
+    }, [activeTab, selectedFasilitas]);
+
+    const handleCallNext = async () => {
+        try {
+            await API.post(`/queues/facility/${selectedFasilitas}/next`);
+            fetchQueueForFacility(selectedFasilitas);
+        } catch (err) {
+            alert(err.response?.data?.detail || "Gagal memanggil antrian.");
+        }
+    };
 
     // State untuk Konfirmasi Evaluasi
     const [showActionConfirm, setShowActionConfirm] = useState(false);
@@ -84,6 +124,7 @@ export default function DashboardTendik() {
     useEffect(() => {
         if (user) {
             fetchAllBookings();
+            fetchFasilitas();
             const interval = setInterval(fetchAllBookings, 8000); // Polling setiap 8 detik
             return () => clearInterval(interval);
         }
@@ -139,6 +180,16 @@ export default function DashboardTendik() {
                         }`}
                     >
                         📋 Konsol Evaluasi
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('antrian')}
+                        className={`px-5 py-2 text-xs font-bold rounded-lg transition duration-150 cursor-pointer ${
+                            activeTab === 'antrian' 
+                                ? 'bg-white text-indigo-600 shadow-xs' 
+                                : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                    >
+                        🚦 Manajemen Antrian
                     </button>
                     <button
                         onClick={() => setActiveTab('profil')}
@@ -232,6 +283,77 @@ export default function DashboardTendik() {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                ) : activeTab === 'antrian' ? (
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900">Manajemen Antrian Fasilitas</h2>
+                                <p className="text-sm text-slate-500">Panggil antrian mahasiswa secara real-time</p>
+                            </div>
+                            <select 
+                                value={selectedFasilitas} 
+                                onChange={(e) => setSelectedFasilitas(e.target.value)}
+                                className="px-4 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                            >
+                                {fasilitasList.map(f => (
+                                    <option key={f.id_fasilitas} value={f.id_fasilitas}>{f.id_fasilitas} - {f.nama_fasilitas}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="bg-slate-50 rounded-xl border border-slate-100 p-6 mb-6">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Status Antrian Saat Ini</h3>
+                                    <p className="text-2xl font-black text-indigo-950">
+                                        {queueData.length} <span className="text-lg text-slate-500 font-medium">Orang Menunggu</span>
+                                    </p>
+                                </div>
+                                <button 
+                                    onClick={handleCallNext}
+                                    disabled={queueData.length === 0}
+                                    className={`px-6 py-3 rounded-xl font-bold shadow-md transition-all duration-300 ${queueData.length > 0 ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white cursor-pointer hover:shadow-lg hover:-translate-y-0.5' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                                >
+                                    📢 Panggil Berikutnya
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm text-slate-600">
+                                <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                                    <tr>
+                                        <th className="p-3 rounded-l-lg">No. Antrian</th>
+                                        <th className="p-3">ID Mahasiswa</th>
+                                        <th className="p-3 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {queueData.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="3" className="p-6 text-center text-slate-400 font-medium">
+                                                Tidak ada antrian aktif di fasilitas ini.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        queueData.map((q, index) => (
+                                            <tr key={q.id_queue} className={`transition ${index === 0 ? 'bg-indigo-50/40' : 'hover:bg-slate-50/40'}`}>
+                                                <td className="p-3 font-black text-indigo-600 text-lg">#{q.nomor_antrian}</td>
+                                                <td className="p-3 text-slate-800 font-bold">{q.mahasiswa_id}</td>
+                                                <td className="p-3 text-center">
+                                                    {index === 0 ? (
+                                                        <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-md text-xs font-bold shadow-sm animate-pulse">Menunggu Giliran Utama</span>
+                                                    ) : (
+                                                        <span className="text-slate-400 font-medium">Menunggu</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 ) : (

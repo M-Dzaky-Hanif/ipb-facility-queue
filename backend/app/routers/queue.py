@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from app.database import get_db
-from app.schemas.queue import QueueCreate, QueueResponse
+from app.schemas.queue import QueueCreate, QueueResponse, QueueStudentResponse
 from app.crud import queue as crud_queue
 
 router = APIRouter(
@@ -21,3 +21,7 @@ async def lihat_antrian_fasilitas(fasilitas_id: str, db: AsyncSession = Depends(
 @router.post("/facility/{fasilitas_id}/next")
 async def panggil_antrian_berikutnya(fasilitas_id: str, db: AsyncSession = Depends(get_db)):
     return await crud_queue.call_next_queue(db=db, fasilitas_id=fasilitas_id)
+
+@router.get("/mahasiswa/{mahasiswa_id}", response_model=List[QueueStudentResponse])
+async def lihat_antrian_mahasiswa(mahasiswa_id: int, db: AsyncSession = Depends(get_db)):
+    return await crud_queue.get_active_queues_by_mahasiswa(db=db, mahasiswa_id=mahasiswa_id)

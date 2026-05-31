@@ -22,7 +22,7 @@ async def create_booking(db: AsyncSession, booking_data: BookingCreate):
         Booking.fasilitas_id == booking_data.fasilitas_id,
         Booking.tanggal == booking_data.tanggal,
         Booking.jam == booking_data.jam,
-        Booking.status == BookingStatus.APPROVED  # Bentrok jika jadwal sudah disetujui (Approved)
+        Booking.status != BookingStatus.REJECTED  # Bentrok jika jadwal sudah disetujui (Approved)
     )
     result_cek = await db.execute(stmt_cek)
     bentrok = result_cek.scalar_one_or_none()

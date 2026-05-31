@@ -14,3 +14,6 @@ class QueueResponse(BaseModel):
     is_active: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+class QueueStudentResponse(QueueResponse):
+    people_ahead: int

@@ -8,6 +8,7 @@ export default function DashboardMhs() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [myBookings, setMyBookings] = useState([]);
+    const [myQueues, setMyQueues] = useState([]);
 
     // State untuk Ubah Password Mahasiswa
     const [pwdForm, setPwdForm] = useState({ old_password: '', new_password: '' });
@@ -34,8 +35,12 @@ export default function DashboardMhs() {
     const fetchMyHistory = useCallback(async () => {
         try {
             if (user?.id) {
-                const res = await API.get(`/bookings/mahasiswa/${user.id}`);
-                setMyBookings(res.data);
+                const [resBookings, resQueues] = await Promise.all([
+                    API.get(`/bookings/mahasiswa/${user.id}`),
+                    API.get(`/queues/mahasiswa/${user.id}`)
+                ]);
+                setMyBookings(resBookings.data);
+                setMyQueues(resQueues.data);
             }
         } catch (err) {
             console.error("Gagal memuat histori transaksi:", err);
@@ -112,6 +117,42 @@ export default function DashboardMhs() {
                         </div>
                     </div>
                 </div>
+
+                {/* STATUS ANTRIAN AKTIF (NEW FEATURE) */}
+                {myQueues.length > 0 && (
+                    <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl p-6 shadow-lg text-white">
+                        <div className="flex items-center gap-3 mb-6 border-b border-indigo-700/50 pb-4">
+                            <span className="text-2xl animate-pulse">⏳</span>
+                            <div>
+                                <h3 className="text-xl font-black tracking-tight">Status Antrian Aktif</h3>
+                                <p className="text-sm text-indigo-200">Anda sedang dalam daftar tunggu untuk fasilitas berikut.</p>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {myQueues.map(q => (
+                                <div key={q.id_queue} className="bg-white/10 backdrop-blur-md rounded-xl p-5 border border-white/20 hover:-translate-y-1 transition duration-300 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                                    <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-1">Fasilitas</p>
+                                    <p className="text-lg font-black text-white mb-4">{q.fasilitas_id}</p>
+                                    
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <p className="text-xs text-slate-300">Nomor Anda</p>
+                                            <p className="text-3xl font-black text-emerald-400">#{q.nomor_antrian}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider mb-1">Menunggu</p>
+                                            <span className="bg-white/20 px-3 py-1 rounded-lg text-sm font-bold text-white shadow-sm">
+                                                {q.people_ahead === 0 ? "Giliran Anda Berikutnya!" : `${q.people_ahead} Antrian di Depan`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* HISTORI STATUS DAFTAR ANTRIAN */}
                 <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-xs">

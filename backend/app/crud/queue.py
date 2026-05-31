@@ -78,3 +78,34 @@ async def call_next_queue(db: AsyncSession, fasilitas_id: str):
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+async def get_active_queues_by_mahasiswa(db: AsyncSession, mahasiswa_id: int):
+    # Dapatkan semua antrian aktif untuk mahasiswa
+    stmt = select(Queue).where(
+        Queue.mahasiswa_id == mahasiswa_id,
+        Queue.is_active == True
+    )
+    result = await db.execute(stmt)
+    queues = result.scalars().all()
+    
+    response = []
+    for q in queues:
+        # Hitung berapa orang di depan (antrian yang lebih kecil nomornya)
+        stmt_ahead = select(func.count(Queue.id_queue)).where(
+            Queue.fasilitas_id == q.fasilitas_id,
+            Queue.is_active == True,
+            Queue.nomor_antrian < q.nomor_antrian
+        )
+        res_ahead = await db.execute(stmt_ahead)
+        people_ahead = res_ahead.scalar() or 0
+        
+        response.append({
+            "id_queue": q.id_queue,
+            "fasilitas_id": q.fasilitas_id,
+            "mahasiswa_id": q.mahasiswa_id,
+            "nomor_antrian": q.nomor_antrian,
+            "waktu_masuk": q.waktu_masuk,
+            "is_active": q.is_active,
+            "people_ahead": people_ahead
+        })
+    return response

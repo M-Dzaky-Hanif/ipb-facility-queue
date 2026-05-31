@@ -188,7 +188,7 @@ export default function Navbar() {
                     </div>
                 )}
 
-                <div className="text-right hidden sm:block select-none">
+                <div className="text-right hidden sm:block select-none border-l border-slate-200 pl-4">
                     <p className="text-sm font-bold text-slate-900">{user?.nama}</p>
                     <p className="text-xs text-slate-400 font-semibold capitalize mt-0.5">{user?.role}</p>
                 </div>
