@@ -80,6 +80,11 @@ export default function DashboardAdmin() {
     const [showAlatModal, setShowAlatModal] = useState(false);
     const [newAlat, setNewAlat] = useState({ id_alat: '', fasilitas_id: '', nama_alat: '', jumlah: '', lokasi: '', kondisi: 'Baik' });
 
+    // States pelacakan mode editing
+    const [editingUser, setEditingUser] = useState(null);
+    const [editingFas, setEditingFas] = useState(null);
+    const [editingAlat, setEditingAlat] = useState(null);
+
     // STATES UNTUK EKSPOR LAPORAN & DYNAMIC STATUS
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportMonth, setExportMonth] = useState(''); // '' untuk Semua Bulan
@@ -100,27 +105,96 @@ export default function DashboardAdmin() {
     const handleAddUser = async (e) => {
         e.preventDefault();
         try {
-            await API.post('/auth/users', newUser);
+            if (editingUser) {
+                await API.put(`/auth/users/${editingUser.id}`, {
+                    nama: newUser.nama,
+                    email: newUser.email,
+                    role: newUser.role,
+                    nim: newUser.nim || null,
+                    nip: newUser.nip || null,
+                    id_admin: newUser.id_admin || null,
+                    id_staff: newUser.id_staff || null,
+                    password: newUser.password || null
+                });
+                showToast(`User "${newUser.nama}" berhasil diperbarui!`, 'success');
+            } else {
+                await API.post('/auth/users', newUser);
+                showToast(`User "${newUser.nama}" berhasil ditambahkan!`, 'success');
+            }
             setShowUserModal(false);
-            setNewUser({ nama: '', email: '', password: '', role: 'mahasiswa' });
+            setNewUser({ nama: '', email: '', password: '', role: 'mahasiswa', nim: '', nip: '', id_admin: '', id_staff: '' });
+            setEditingUser(null);
             fetchAdminData(); 
-            showToast(`User "${newUser.nama}" berhasil ditambahkan ke sistem!`, 'success');
         } catch (err) {
-            showToast(err.response?.data?.detail || 'Gagal menambahkan user.', 'error');
+            showToast(err.response?.data?.detail || 'Gagal menyimpan user.', 'error');
         }
     };
 
     const handleAddFasilitas = async (e) => {
         e.preventDefault();
         try {
-            await API.post('/fasilitas/', { ...newFas, kapasitas: parseInt(newFas.kapasitas) });
+            if (editingFas) {
+                await API.put(`/fasilitas/${editingFas.id_fasilitas}`, {
+                    id_fasilitas: newFas.id_fasilitas,
+                    nama_fasilitas: newFas.nama_fasilitas,
+                    kapasitas: parseInt(newFas.kapasitas),
+                    lokasi: newFas.lokasi,
+                    status: newFas.status,
+                    fasilitas_pendukung: newFas.fasilitas_pendukung
+                });
+                showToast(`Fasilitas "${newFas.nama_fasilitas}" berhasil diperbarui!`, 'success');
+            } else {
+                await API.post('/fasilitas/', { ...newFas, kapasitas: parseInt(newFas.kapasitas) });
+                showToast(`Fasilitas "${newFas.nama_fasilitas}" berhasil ditambahkan!`, 'success');
+            }
             setShowFasModal(false);
             setNewFas({ id_fasilitas: '', nama_fasilitas: '', lokasi: '', kapasitas: '', status: 'Tersedia', fasilitas_pendukung: '' });
+            setEditingFas(null);
             fetchAdminData(); 
-            showToast(`Fasilitas "${newFas.nama_fasilitas}" berhasil ditambahkan!`, 'success');
         } catch (err) {
-            showToast(err.response?.data?.detail || 'Gagal menambahkan sarana.', 'error');
+            showToast(err.response?.data?.detail || 'Gagal menyimpan sarana.', 'error');
         }
+    };
+
+    const handleEditUserClick = (u) => {
+        setEditingUser(u);
+        setNewUser({
+            nama: u.nama,
+            email: u.email,
+            password: '',
+            role: u.role,
+            nim: u.nim || '',
+            nip: u.nip || '',
+            id_admin: u.id_admin || '',
+            id_staff: u.id_staff || ''
+        });
+        setShowUserModal(true);
+    };
+
+    const handleEditFasClick = (f) => {
+        setEditingFas(f);
+        setNewFas({
+            id_fasilitas: f.id_fasilitas,
+            nama_fasilitas: f.nama_fasilitas,
+            lokasi: f.lokasi,
+            kapasitas: String(f.kapasitas),
+            status: f.status,
+            fasilitas_pendukung: f.fasilitas_pendukung || ''
+        });
+        setShowFasModal(true);
+    };
+
+    const handleEditAlatClick = (a) => {
+        setEditingAlat(a);
+        setNewAlat({
+            id_alat: a.id_alat,
+            fasilitas_id: a.fasilitas_id,
+            nama_alat: a.nama_alat,
+            jumlah: String(a.jumlah),
+            lokasi: a.lokasi || '',
+            kondisi: a.kondisi
+        });
+        setShowAlatModal(true);
     };
 
     const handleToggleFasilitasStatus = async (fas) => {
@@ -195,17 +269,30 @@ export default function DashboardAdmin() {
         window.print();
     };
 
-    // TAMBAHAN: Handler Fungsi Tambah Alat ke Backend
+    // TAMBAHAN: Handler Fungsi Tambah/Edit Alat ke Backend
     const handleAddAlat = async (e) => {
         e.preventDefault();
         try {
-            await API.post('/alat/', { ...newAlat, jumlah: parseInt(newAlat.jumlah) });
+            if (editingAlat) {
+                await API.put(`/alat/${editingAlat.id_alat}`, {
+                    id_alat: newAlat.id_alat,
+                    fasilitas_id: newAlat.fasilitas_id,
+                    nama_alat: newAlat.nama_alat,
+                    jumlah: parseInt(newAlat.jumlah),
+                    lokasi: newAlat.lokasi,
+                    kondisi: newAlat.kondisi
+                });
+                showToast(`Alat "${newAlat.nama_alat}" berhasil diperbarui!`, 'success');
+            } else {
+                await API.post('/alat/', { ...newAlat, jumlah: parseInt(newAlat.jumlah) });
+                showToast(`Alat "${newAlat.nama_alat}" berhasil ditambahkan!`, 'success');
+            }
             setShowAlatModal(false);
             setNewAlat({ id_alat: '', fasilitas_id: '', nama_alat: '', jumlah: '', lokasi: '', kondisi: 'Baik' });
+            setEditingAlat(null);
             fetchAdminData(); 
-            showToast(`Alat "${newAlat.nama_alat}" berhasil ditambahkan!`, 'success');
         } catch (err) {
-            showToast(err.response?.data?.detail || 'Gagal menambahkan alat.', 'error');
+            showToast(err.response?.data?.detail || 'Gagal menyimpan alat.', 'error');
         }
     };
     

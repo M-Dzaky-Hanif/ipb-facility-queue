@@ -5,7 +5,7 @@ from typing import List
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserRegister, UserLogin, UserResponse, UserCreate, UserPasswordUpdate
+from app.schemas.user import UserRegister, UserLogin, UserResponse, UserCreate, UserPasswordUpdate, UserUpdate
 from app.crud import user as crud_user
 from app.core.security import get_password_hash
 
@@ -84,4 +84,11 @@ async def change_password(user_id: int, password_data: UserPasswordUpdate, db: A
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Gagal memperbarui password: {str(e)}")
+
+@router.put("/users/{user_id}", response_model=UserResponse)
+async def update_user_by_admin(user_id: int, user_update: UserUpdate, db: AsyncSession = Depends(get_db)):
+    updated_user = await crud_user.update_user(db=db, user_id=user_id, user_update=user_update)
+    if not updated_user:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan!")
+    return updated_user
 

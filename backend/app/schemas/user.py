@@ -30,4 +30,15 @@ class UserPasswordUpdate(BaseModel):
     old_password: str
     new_password: str
 
+class UserUpdate(BaseModel):
+    nama: str
+    email: EmailStr
+    role: UserRole
+    nim: Optional[str] = None
+    nip: Optional[str] = None
+    id_admin: Optional[str] = None
+    id_staff: Optional[str] = None
+    password: Optional[str] = None
+
+
     
