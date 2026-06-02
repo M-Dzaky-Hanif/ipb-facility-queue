@@ -40,8 +40,8 @@ async def seed_data():
             users = [
                 # Mahasiswa (5)
                 User(nama="Dzaky Hanif", email="mhs1@apps.ipb.ac.id", password=default_password, role=UserRole.MAHASISWA, nim="G6401201001"),
-                User(nama="Budi Santoso", email="mhs2@apps.ipb.ac.id", password=default_password, role=UserRole.MAHASISWA, nim="G6401201002"),
-                User(nama="Siti Aminah", email="mhs3@apps.ipb.ac.id", password=default_password, role=UserRole.MAHASISWA, nim="G6401201003"),
+                User(nama="Thoriq Aziz", email="mhs2@apps.ipb.ac.id", password=default_password, role=UserRole.MAHASISWA, nim="G6401201002"),
+                User(nama="Rama Koswara", email="mhs3@apps.ipb.ac.id", password=default_password, role=UserRole.MAHASISWA, nim="G6401201003"),
                 User(nama="Andi Wijaya", email="mhs4@apps.ipb.ac.id", password=default_password, role=UserRole.MAHASISWA, nim="G6401201004"),
                 User(nama="Rina Melati", email="mhs5@apps.ipb.ac.id", password=default_password, role=UserRole.MAHASISWA, nim="G6401201005"),
                 

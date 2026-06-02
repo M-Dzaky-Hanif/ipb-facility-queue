@@ -6,5 +6,6 @@ pydantic
 pydantic-settings
 alembic
 bcrypt==3.2.2
+passlib[bcrypt]
 email-validator
 cryptography
