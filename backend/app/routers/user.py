@@ -56,7 +56,11 @@ async def create_user_by_admin(user_in: UserCreate, db: AsyncSession = Depends(g
         nama=user_in.nama,
         email=user_in.email,
         password=get_password_hash(user_in.password),
-        role=user_in.role
+        role=user_in.role,
+        nim=user_in.nim,
+        nip=user_in.nip,
+        id_admin=user_in.id_admin,
+        id_staff=user_in.id_staff,
     )
     db.add(new_user)
     await db.commit()

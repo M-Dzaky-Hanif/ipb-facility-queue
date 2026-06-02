@@ -71,7 +71,7 @@ export default function DashboardAdmin() {
     // STATE & HANDLER UNTUK MODAL FORM
     // =========================================
     const [showUserModal, setShowUserModal] = useState(false);
-    const [newUser, setNewUser] = useState({ nama: '', email: '', password: '', role: 'mahasiswa' });
+    const [newUser, setNewUser] = useState({ nama: '', email: '', password: '', role: 'mahasiswa', nim: '', nip: '', id_admin: '', id_staff: '' });
 
     const [showFasModal, setShowFasModal] = useState(false);
     const [newFas, setNewFas] = useState({ id_fasilitas: '', nama_fasilitas: '', lokasi: '', kapasitas: '', status: 'Tersedia', fasilitas_pendukung: '' });
@@ -540,7 +540,7 @@ export default function DashboardAdmin() {
                                                     <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase">{u.role}</span>
                                                 </td>
                                                 <td className="p-4 text-center space-x-3">
-                                                    <button className="text-indigo-600 hover:text-indigo-800 font-bold text-xs">Edit</button>
+                                                    <button onClick={() => handleEditUserClick(u)} className="text-indigo-600 hover:text-indigo-800 font-bold text-xs cursor-pointer">Edit</button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -552,7 +552,7 @@ export default function DashboardAdmin() {
                         {showUserModal && (
                             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
                                 <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-                                    <h3 className="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-2">👥 Tambah User Baru</h3>
+                                    <h3 className="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-2">{editingUser ? '✏️ Edit Data User' : '👥 Tambah User Baru'}</h3>
                                     <form onSubmit={handleAddUser} className="space-y-4">
                                         <div>
                                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Nama Lengkap</label>
@@ -563,8 +563,17 @@ export default function DashboardAdmin() {
                                             <input required type="email" value={newUser.email} onChange={e=>setNewUser({...newUser, email: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20" />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Password Default</label>
-                                            <input required type="password" value={newUser.password} onChange={e=>setNewUser({...newUser, password: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                                                {editingUser ? 'Password Baru (opsional)' : 'Password Default'}
+                                            </label>
+                                            <input
+                                                required={!editingUser}
+                                                type="password"
+                                                placeholder={editingUser ? 'Kosongkan jika tidak ingin mengganti password' : ''}
+                                                value={newUser.password}
+                                                onChange={e=>setNewUser({...newUser, password: e.target.value})}
+                                                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                            />
                                         </div>
                                         <div>
                                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Role Sistem</label>
@@ -576,8 +585,8 @@ export default function DashboardAdmin() {
                                             </select>
                                         </div>
                                         <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
-                                            <button type="button" onClick={()=>setShowUserModal(false)} className="px-4 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-100 rounded-lg transition cursor-pointer">Batal</button>
-                                            <button type="submit" className="px-4 py-2.5 text-sm bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-md transition cursor-pointer">Simpan Akun</button>
+                                            <button type="button" onClick={() => { setShowUserModal(false); setEditingUser(null); setNewUser({ nama: '', email: '', password: '', role: 'mahasiswa', nim: '', nip: '', id_admin: '', id_staff: '' }); }} className="px-4 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-100 rounded-lg transition cursor-pointer">Batal</button>
+                                            <button type="submit" className="px-4 py-2.5 text-sm bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-md transition cursor-pointer">{editingUser ? 'Simpan Perubahan' : 'Simpan Akun'}</button>
                                         </div>
                                     </form>
                                 </div>
@@ -626,7 +635,7 @@ export default function DashboardAdmin() {
                                         <th className="p-4 text-center">Kapasitas</th>
                                         <th className="p-4">Fasilitas Pendukung</th>
                                         <th className="p-4">Status</th>
-                                        <th className="p-4 text-center">Aksi Cepat</th>
+                                        <th className="p-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -665,7 +674,13 @@ export default function DashboardAdmin() {
                                                     {f.status === 'Maintenance' ? '🔧 Maintenance' : '🟢 Tersedia'}
                                                 </span>
                                             </td>
-                                            <td className="p-4 text-center">
+                                            <td className="p-4 text-center space-x-2">
+                                                <button
+                                                    onClick={() => handleEditFasClick(f)}
+                                                    className="text-indigo-600 hover:text-indigo-800 font-bold text-xs cursor-pointer"
+                                                >
+                                                    Edit
+                                                </button>
                                                 <button 
                                                     onClick={() => handleToggleFasilitasStatus(f)}
                                                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-xs cursor-pointer ${
@@ -684,7 +699,7 @@ export default function DashboardAdmin() {
                             {showFasModal && (
                                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
                                     <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-                                        <h3 className="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-2">🏢 Tambah Sarana / Ruangan</h3>
+                                        <h3 className="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-2">{editingFas ? '✏️ Edit Sarana / Ruangan' : '🏢 Tambah Sarana / Ruangan'}</h3>
                                         <form onSubmit={handleAddFasilitas} className="space-y-4">
                                             <div>
                                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Kode ID (Harus Unik)</label>
@@ -716,8 +731,8 @@ export default function DashboardAdmin() {
                                                 <input type="text" placeholder="Contoh: AC, Proyektor, Wifi, Papan Tulis" value={newFas.fasilitas_pendukung} onChange={e=>setNewFas({...newFas, fasilitas_pendukung: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20" />
                                             </div>
                                             <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
-                                                <button type="button" onClick={()=>setShowFasModal(false)} className="px-4 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-100 rounded-lg transition cursor-pointer">Batal</button>
-                                                <button type="submit" className="px-4 py-2.5 text-sm bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 shadow-md transition cursor-pointer">Simpan Sarana</button>
+                                                <button type="button" onClick={() => { setShowFasModal(false); setEditingFas(null); setNewFas({ id_fasilitas: '', nama_fasilitas: '', lokasi: '', kapasitas: '', status: 'Tersedia', fasilitas_pendukung: '' }); }} className="px-4 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-100 rounded-lg transition cursor-pointer">Batal</button>
+                                                <button type="submit" className="px-4 py-2.5 text-sm bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 shadow-md transition cursor-pointer">{editingFas ? 'Simpan Perubahan' : 'Simpan Sarana'}</button>
                                             </div>
                                         </form>
                                     </div>
@@ -753,6 +768,7 @@ export default function DashboardAdmin() {
                                         <th className="p-4">Lokasi / Fasilitas</th>
                                         <th className="p-4 text-center">Jumlah</th>
                                         <th className="p-4">Kondisi</th>
+                                        <th className="p-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -773,6 +789,9 @@ export default function DashboardAdmin() {
                                                     {a.kondisi}
                                                 </span>
                                             </td>
+                                            <td className="p-4 text-center">
+                                                <button onClick={() => handleEditAlatClick(a)} className="text-blue-600 hover:text-blue-800 font-bold text-xs cursor-pointer">Edit</button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -781,7 +800,7 @@ export default function DashboardAdmin() {
                             {showAlatModal && (
                                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
                                     <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-                                        <h3 className="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-2">🛠️ Tambah Inventaris Alat</h3>
+                                        <h3 className="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-2">{editingAlat ? '✏️ Edit Inventaris Alat' : '🛠️ Tambah Inventaris Alat'}</h3>
                                         <form onSubmit={handleAddAlat} className="space-y-4">
                                             <div>
                                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">ID Alat (Unik)</label>
@@ -819,8 +838,8 @@ export default function DashboardAdmin() {
                                                 <input type="text" placeholder="Contoh: Lemari Kaca No 2" value={newAlat.lokasi} onChange={e=>setNewAlat({...newAlat, lokasi: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20" />
                                             </div>
                                             <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
-                                                <button type="button" onClick={()=>setShowAlatModal(false)} className="px-4 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-100 rounded-lg transition cursor-pointer">Batal</button>
-                                                <button type="submit" className="px-4 py-2.5 text-sm bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md transition cursor-pointer">Simpan Alat</button>
+                                                <button type="button" onClick={() => { setShowAlatModal(false); setEditingAlat(null); setNewAlat({ id_alat: '', fasilitas_id: '', nama_alat: '', jumlah: '', lokasi: '', kondisi: 'Baik' }); }} className="px-4 py-2.5 text-sm text-slate-500 font-bold hover:bg-slate-100 rounded-lg transition cursor-pointer">Batal</button>
+                                                <button type="submit" className="px-4 py-2.5 text-sm bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md transition cursor-pointer">{editingAlat ? 'Simpan Perubahan' : 'Simpan Alat'}</button>
                                             </div>
                                         </form>
                                     </div>

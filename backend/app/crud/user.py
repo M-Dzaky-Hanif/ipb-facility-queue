@@ -45,7 +45,13 @@ async def update_user(db: AsyncSession, user_id: int, user_update: UserUpdate):
     db_user = res.scalar_one_or_none()
     if not db_user:
         return None
-        
+
+    # Cek duplikasi email: jika email diubah, pastikan belum dipakai user lain
+    if user_update.email != db_user.email:
+        existing = await get_user_by_email(db, user_update.email)
+        if existing:
+            raise HTTPException(status_code=400, detail="Email sudah digunakan oleh akun lain!")
+
     db_user.nama = user_update.nama
     db_user.email = user_update.email
     db_user.role = user_update.role
